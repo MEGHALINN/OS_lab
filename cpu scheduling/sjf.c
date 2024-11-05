@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <limits.h> // For INT_MAX
 
 struct sjf {
     int pid;
@@ -6,6 +7,7 @@ struct sjf {
     int atime;
     int wtime;
     int ttime;
+    int completed;
 };
 
 void sortProcesses(struct sjf p[], int n) {
@@ -32,8 +34,8 @@ int main() {
     for (i = 0; i < n; i++) {
         printf("Enter Pid, Burst time, and Arrival time for Process %d: ", i + 1);
         scanf("%d %d %d", &p[i].pid, &p[i].btime, &p[i].atime);
-    }
-
+        p[i].completed = 0; // Mark process as not completed initially
+    } 
 
     sortProcesses(p, n);
 
@@ -41,38 +43,40 @@ int main() {
 
     while (completed < n) {
         int min_btime_idx = -1;
+        int min_btime = INT_MAX;
 
-      
+        // Find the process with the shortest burst time that has arrived and is not completed
         for (i = 0; i < n; i++) {
-            if (p[i].atime <= current_time && p[i].btime > 0) {
-                if (min_btime_idx == -1 || p[i].btime < p[min_btime_idx].btime) {
-                    min_btime_idx = i;
-                }
+            if (p[i].atime <= current_time && p[i].completed == 0 && p[i].btime < min_btime) {
+                min_btime_idx = i;
+                min_btime = p[i].btime;
             }
         }
 
         if (min_btime_idx != -1) {
-     
+            // Process is found, calculate waiting and turnaround times
             p[min_btime_idx].wtime = current_time - p[min_btime_idx].atime;
             p[min_btime_idx].ttime = p[min_btime_idx].wtime + p[min_btime_idx].btime;
 
-          
+            // Update totals
             totwt += p[min_btime_idx].wtime;
             tottat += p[min_btime_idx].ttime;
 
-     
+            // Print process info
             printf("P%d\t%d\t\t%d\t\t%d\t\t%d\n", p[min_btime_idx].pid, p[min_btime_idx].btime, p[min_btime_idx].atime, p[min_btime_idx].wtime, p[min_btime_idx].ttime);
 
-         
+            // Update current time and mark process as completed
             current_time += p[min_btime_idx].btime;
-            p[min_btime_idx].btime = -1; 
+            p[min_btime_idx].completed = 1;
             completed++;
         } else {
-            
-            int next_arrival = __INT_MAX__;
+            // If no process is ready, advance time to the next arrival
+            int next_arrival = INT_MAX;
             for (i = 0; i < n; i++) {
-                if (p[i].atime < next_arrival && p[i].btime > 0) {
-                    next_arrival = p[i].atime;
+                if (p[i].atime > current_time && p[i].completed == 0) {
+                    if (p[i].atime < next_arrival) {
+                        next_arrival = p[i].atime;
+                    }
                 }
             }
             current_time = next_arrival;

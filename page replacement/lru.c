@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define maxpages 20
-#define maxframes 3
+#define maxframes 4
 int frames[maxframes];
 int counter[maxframes];
 

@@ -1,88 +1,60 @@
 #include <stdio.h>
-#include <stdlib.h>
 
-struct roundrobin {
+struct Process{
     int pid;
     int atime;
     int btime;
-    int wtime;
-    int ttime;
-    int priority;  // Added priority field
-} p[10];
+    int priority;
+};
 
-void main() {
-    int i, j, n, totwt = 0, tottat = 0;
-    struct roundrobin temp;
-    printf("Enter the number of processes: ");
-    scanf("%d", &n);
-    int remain = n;
-    for (i = 0; i < n; i++) {
-        printf("Enter PID, Arrival time, Burst time, and Priority for Process %d: ", i + 1);
-        scanf("%d %d %d %d", &p[i].pid, &p[i].atime, &p[i].btime, &p[i].priority);
-    }
-    int tq;
-    printf("Enter the time quantum: ");
-    scanf("%d", &tq);
-
-    // Sort processes by arrival time, then by priority (lower number indicates higher priority)
-    for (i = 0; i < n; i++) {
-        for (j = i + 1; j < n; j++) {
-            if (p[i].atime > p[j].atime || (p[i].atime == p[j].atime && p[i].priority > p[j].priority)) {
-                temp = p[i];
-                p[i] = p[j];
-                p[j] = temp;
+void sortprocesses(struct Process p[],int n){
+    struct Process temp;
+    for(int i=0;i<n;i++){
+        for(int j=i+1;j<n;j++){
+            if(p[i].atime>p[j].atime || (p[i].atime==p[j].atime && p[i].priority>p[j].priority)){
+                temp=p[i];
+                p[i]=p[j];
+                p[j]=temp;
             }
         }
     }
+}
 
-    int time = 0, flag = 0;
-    int rt[10];
-    for (i = 0; i < n; i++) {
-        rt[i] = p[i].btime;
+void calcandprint(struct Process p[],int n){
+    int wt[n],tat[n];
+    int pstart=0;
+    wt[0]=0;
+    float avwt=0,avtat=0;
+    for(int i=1;i<n;i++){
+        pstart+=p[i-1].btime;
+        wt[i]=pstart-p[i].atime;
+        avwt+=wt[i];
     }
 
-    i = 0;
-    while (remain != 0) {
-        int highest_priority_index = -1;
-
-        // Find the process with the highest priority that has arrived
-        for (j = 0; j < n; j++) {
-            if (p[j].atime <= time && rt[j] > 0) {
-                if (highest_priority_index == -1 || p[j].priority < p[highest_priority_index].priority) {
-                    highest_priority_index = j;
-                }
-            }
-        }
-
-        if (highest_priority_index != -1) {
-            i = highest_priority_index;
-            if (rt[i] <= tq) {
-                time += rt[i];
-                rt[i] = 0;
-                flag = 1;
-            } else {
-                rt[i] -= tq;
-                time += tq;
-            }
-
-            if (rt[i] == 0 && flag == 1) {
-                remain--;
-                p[i].wtime = time - p[i].atime - p[i].btime;
-                p[i].ttime = time - p[i].atime;
-                totwt += p[i].wtime;
-                tottat += p[i].ttime;
-                flag = 0;
-            }
-        } else {
-            time++;
-        }
+    for(int i=0;i<n;i++){
+        tat[i]=wt[i]+p[i].btime;
+        avtat+=tat[i];
     }
-
-    printf("Pid\tArrival Time\tBurst Time\tPriority\tWaiting Time\tTurnaround Time\n");
-    for (i = 0; i < n; i++) {
-        printf("P%d\t%d\t\t%d\t\t%d\t\t%d\t\t%d\n", p[i].pid, p[i].atime, p[i].btime, p[i].priority, p[i].wtime, p[i].ttime);
+    avwt=avwt/n;
+    avtat=avtat/n;
+    printf("PID\tAT\tBT\tWT\tTAT\n");
+    for(int i=0;i<n;i++){
+        printf("%d\t%d\t%d\t%d\t%d\n",p[i].pid,p[i].atime,p[i].btime,wt[i],tat[i]);
     }
+    printf("Average Waiting Time: %f\n",avwt);
+    printf("Average Turnaround Time: %f\n",avtat);
+}
 
-    printf("Average Waiting Time: %.2f\n", (float) totwt / n);
-    printf("Average Turnaround Time: %.2f\n", (float) tottat / n);
+void main(){
+    int n;
+    printf("ENter the total number of processes:");
+    scanf("%d",&n);
+    struct Process p[n];
+    for(int i=0;i<n;i++){
+        printf("Enter the arrival time, burst time and priority of process %d:",i+1);
+        p[i].pid=i+1;
+        scanf("%d %d %d",&p[i].atime,&p[i].btime,&p[i].priority);
+    }
+    sortprocesses(p,n);
+    calcandprint(p,n);
 }
